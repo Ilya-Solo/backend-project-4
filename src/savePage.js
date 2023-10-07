@@ -16,7 +16,7 @@ const createFilenameByUrl = (url_string) => {
 const savePage = (directory, url, loadFunction) => {
   const fileName = createFilenameByUrl(url);
   const filePath = path.join(directory, fileName);
-  fs.promises
+  return fs.promises //saving data into file using promise
     .open(filePath, 'w')
     .then((fileHandle) => {
       return loadFunction(url)
