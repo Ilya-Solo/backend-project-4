@@ -21,7 +21,8 @@ const savePage = (directory, url, loadFunction) => {
     .then((fileHandle) => {
       return loadFunction(url)
         .then(data => fileHandle.writeFile(data, 'utf-8'))
-        .then(() => fileHandle.close());
+        .then(() => fileHandle.close())
+        .then(() => filePath);
     })
     .catch((error) => {
       console.error('Error writing to file:', error);
