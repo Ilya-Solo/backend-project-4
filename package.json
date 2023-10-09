@@ -1,5 +1,5 @@
 {
-  "name": "backend-project-4",
+  "name": "@hexlet/code",
   "version": "1.0.0",
   "description": "[![Actions Status](https://github.com/Ilya-Solo/backend-project-4/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Ilya-Solo/backend-project-4/actions)",
   "main": "index.js",
@@ -19,6 +19,10 @@
   },
   "dependencies": {
     "axios": "^1.5.1",
+    "cheerio": "^1.0.0-rc.12",
     "commander": "^11.0.0"
+  },
+  "bin": {
+    "code": "bin/savePage.js"
   }
 }

@@ -2,7 +2,7 @@
 
 import { createRequire } from 'module';
 import { program } from 'commander';
-import { savePage, loadPage } from '../src/savePage.js';
+import savePage from '../src/main.js';
 
 const require = createRequire(import.meta.url);
 const packageConfig = require('../package.json');
@@ -15,7 +15,7 @@ program
     .arguments('<url>')
     .option('-o --output [dir]', 'output dir', process.cwd())
     .action((url) => {
-        savePage(program.opts().output, url, loadPage)
+        savePage(program.opts().output, url)
             .then((data) => console.log(data));
     });
 

@@ -1,29 +1,11 @@
 import axios from 'axios';
 import fs from 'fs';
-import path from 'path'
+import createNameByUrl from './createNameByUrl.js';
+import path from 'path';
 
-const createFilenameByUrl = (url_string) => {
-  const url = new URL(url_string);
-  const urlNameWithoutProtocol = `${url.hostname}${url.pathname}`;
-
-  const fileName = urlNameWithoutProtocol
-    .replace(/\.html$/i, '')
-    .replace(/[^A-Za-z0-9]/g, '-');
-
-  return `${fileName}.html`;
-};
-
-const savePage = (directory, url, loadFunction) => {
-  const fileName = createFilenameByUrl(url);
-  const filePath = path.join(directory, fileName);
-  return fs.promises //saving data into file using promise
-    .open(filePath, 'w')
-    .then((fileHandle) => {
-      return loadFunction(url)
-        .then(data => fileHandle.writeFile(data, 'utf-8'))
-        .then(() => fileHandle.close())
-        .then(() => filePath);
-    })
+const saveData = (fullPath, data) => {
+  return fs.promises.writeFile(fullPath, data, 'utf-8')
+    .then(() => fullPath)
     .catch((error) => {
       console.error('Error writing to file:', error);
     });
@@ -37,4 +19,14 @@ const loadPage = (url) => {
     });
 }
 
-export { savePage, loadPage };
+const savePrimaryPage = (directory, url) => {
+  const fileName = createNameByUrl(url);
+  const filePath = path.join(directory, fileName);
+
+  return loadPage(url)
+    .then((data) => saveData(filePath, data))
+    .then(() => filePath);
+}
+
+export { saveData, loadPage };
+export default savePrimaryPage;
