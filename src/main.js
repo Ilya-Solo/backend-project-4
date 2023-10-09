@@ -1,3 +1,9 @@
 import savePrimaryPage from './savePage.js';
+import processImages from './imagesProcessing/imagesProcessor.js';
 
-export default savePrimaryPage;
+const savePage = (outputDir, url) => {
+    return savePrimaryPage(outputDir, url)
+        .then((mainFilePath) => processImages(mainFilePath, url))
+}
+
+export default savePage;

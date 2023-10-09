@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import createNameByUrl from '../createNameByUrl.js'
 import path from 'path';
 import fs from 'fs';
+import saveData from '../savePage.js';
 
 const extractImagesUrls = (data) => {
     const $ = cheerio.load(data);
@@ -12,15 +13,22 @@ const extractImagesUrls = (data) => {
             imageUrls.push(src);
         }
     });
-    return images;
+    return imageUrls;
 };
 
-const imagesStep = (path) => {
-    fs.promises.readFile(path, 'utf-8')
-        .then((data) => {
-            const imagesUrls = extractImagesUrls(data);
-        })
-}
+const saveImage = (filesDirPath, imageUrl) => saveData(filesDirPath, imageUrl);
 
+const saveImages = (mainDirectoryPath, mainPageUrl, data) => {
+    const filesDirName = createNameByUrl(mainPageUrl, '_files');
+    const filesDirPath = path.join(mainDirectoryPath, filesDirName);
+    return fs.promises.mkdir(filesDirPath)
+        .catch((error) => { console.log('Something went wrong with files directory creating:', error) })
+        .then(() => extractImagesUrls(data))
+        .then((imagesUrls) => {
+            return imagesUrls.map((imageUrl) => saveImage(filesDirPath, imageUrl));
+        })
+};
+
+export default saveImages;
 // path -> data ->
 //     [extract urls + load images + save images, change_urls_in_html + save result]

@@ -1,15 +1,15 @@
 import * as cheerio from 'cheerio';
 import createNameByUrl from '../createNameByUrl.js'
 import path from 'path';
-import saveData from '../savePage.js'
-import { data } from 'cheerio/lib/api/attributes.js';
+import saveData from '../savePage.js';
 
-const changeUrlsInHtml = (filePath, data) => {
+const changeImageUrlsInHtml = (url, data) => {
     const $ = cheerio.load(data);
+    const imagesDirectoryName = createNameByUrl(url, '_file');
     $('img').each((_, element) => {
         const src = $(element).attr('src');
         if (src) {
-            const fullPath = path.join(filePath, createNameByUrl(src));
+            const fullPath = path.join(imagesDirectoryName, createNameByUrl(src));
             $(element).attr('src', fullPath);
         }
     });
@@ -17,12 +17,9 @@ const changeUrlsInHtml = (filePath, data) => {
     return $.html();
 }
 
-const relativeImagePath = (mainFilePath) => {
-    const directoryName = path.basename(mainFilePath).name;
-    const processedDirectoryName = createNameByUrl(directoryName)
+const saveDataWithChangedUrls = (fullPath, url, data) => {
+    const changedData = changeImageUrlsInHtml(url, data);
+    return saveData(fullPath, changedData);
 }
 
-const saveDataWithChangedUrls = (path, data) => {
-    const changedData = changeUrlsInHtml(path, data);
-    return fs.promises.writeFile(path, changedData, 'utf-8');
-}
+export default saveDataWithChangedUrls;
