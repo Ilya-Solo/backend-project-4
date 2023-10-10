@@ -1,6 +1,6 @@
-export default (url_string, setExtension = '.html') => {
-  const url = new URL(url_string);
-  const urlNameWithoutProtocol = `${url.hostname}${url.pathname}`;
+export default (urlString, setExtension = '.html') => {
+  const urlArr = urlString.split('//');
+  const urlNameWithoutProtocol = (urlArr[urlArr.length - 1]).split('?')[0];
 
   const extensionMatch = urlNameWithoutProtocol.match(/(\.[A-Za-z0-9]+$)/);
   let extension;
