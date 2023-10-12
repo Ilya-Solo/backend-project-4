@@ -19,8 +19,8 @@ const loadPage = (url, options) => {
     });
 }
 
-const crawlAndSaveData = (directory, url, opts = {}) => {
-  const fileName = createNameByUrl(url);
+const crawlAndSaveData = (directory, url, mainPageUrl, opts = {}) => {
+  const fileName = createNameByUrl(url, mainPageUrl);
   const filePath = path.join(directory, fileName);
 
   return loadPage(url, opts)
