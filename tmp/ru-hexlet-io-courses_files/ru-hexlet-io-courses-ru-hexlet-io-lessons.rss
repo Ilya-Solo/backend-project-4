@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Новые уроки на Хекслете</title>
+    <description>Практические уроки по программированию</description>
+    <link>https://ru.hexlet.io/</link>
+    <webMaster>info@hexlet.io</webMaster>
+    <item>
+      <title>CRUD на Spring Boot / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4261</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/crud/theory_unit</link>
+      <description>Цель: Собираем все вместе для создания типового CRUD</description>
+      <pubDate>Mon, 09 Oct 2023 11:31:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>Связь один-ко-многим / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4265</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/one-to-many/theory_unit</link>
+      <description>Цель: Научиться создавать связь o2m между сущностями Spring Data JPA</description>
+      <pubDate>Tue, 03 Oct 2023 12:55:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>Работа со статикой / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4270</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/static/theory_unit</link>
+      <description>Цель: Научиться работать со статическими ресурсами, например js и css в Spring Boot</description>
+      <pubDate>Mon, 02 Oct 2023 12:57:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>Профили / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4269</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/profiles/theory_unit</link>
+      <description>Цель: Познакомиться с понятием окружений и научиться их настраивать</description>
+      <pubDate>Mon, 02 Oct 2023 12:57:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>Частичное обновление / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4267</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/partial-update/theory_unit</link>
+      <description>Цель: Научиться реализовывать обновление, которое учитывает возможность передачи только части данных</description>
+      <pubDate>Mon, 02 Oct 2023 12:57:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>Преобразование DTO в сущность для обновления / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4284</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/dto-to-entity-for-update/theory_unit</link>
+      <description>Цель: Научиться правильно использовать DTO для операции обновления сущности</description>
+      <pubDate>Mon, 02 Oct 2023 12:57:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>JPA Repository / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4257</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/jpa-repository/theory_unit</link>
+      <description>Цель: Научиться использовать встроенные возможности репозиториев для извлечения данных по разнообразным параметрам</description>
+      <pubDate>Mon, 02 Oct 2023 12:57:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>Валидация сущностей / Java: Корпоративные приложения на Spring Boot</title>
+      <guid isPermaLink="false">4278</guid>
+      <link>https://ru.hexlet.io/courses/java-spring/lessons/entity-validation/theory_unit</link>
+      <description>Цель: Познакомиться со встроенными валидаторами, научиться их применять</description>
+      <pubDate>Fri, 29 Sep 2023 12:38:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>Мидлвары / React: Redux Toolkit</title>
+      <guid isPermaLink="false">4283</guid>
+      <link>https://ru.hexlet.io/courses/js-redux-toolkit/lessons/middlewares/theory_unit</link>
+      <description>Цель: Научиться подключать и использовать мидлвары.</description>
+      <pubDate>Fri, 29 Sep 2023 07:08:08 +0000</pubDate>
+    </item>
+    <item>
+      <title>Редьюсеры / React: Redux Toolkit</title>
+      <guid isPermaLink="false">4282</guid>
+      <link>https://ru.hexlet.io/courses/js-redux-toolkit/lessons/reducers/theory_unit</link>
+      <description>Цель: Изучить способы разбиения хранилища на части</description>
+      <pubDate>Fri, 29 Sep 2023 07:08:08 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

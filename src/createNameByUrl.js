@@ -1,4 +1,22 @@
-export default (urlString, setExtension = '.html') => {
+const createNameByUrls = (sourceUrlString, mainPageUrlString, setExtension = '.html') => {
+  const sourceUrl = configureUrlObj(sourceUrlString, setExtension);
+  const mainPageUrl = configureUrlObj(mainPageUrlString);
+
+  if (sourceUrlString === mainPageUrlString) {
+    mainPageUrl.name = null;
+  }
+
+  const fullFileName = [mainPageUrl.name, sourceUrl.name]
+    .filter(item => item !== null)
+    .join('-');
+  return `${fullFileName}${sourceUrl.extension}`;
+};
+
+const configureUrlObj = (urlString, setExtension) => {
+  if (urlString.length === 0) {
+    return { name: null, extension: '' };
+  }
+
   const urlArr = urlString.split('//');
   const urlNameWithoutProtocol = (urlArr[urlArr.length - 1]).split('?')[0];
 
@@ -12,5 +30,7 @@ export default (urlString, setExtension = '.html') => {
     .replace(extension, '')
     .replace(/[^A-Za-z0-9]/g, '-');
 
-  return `${fileName}${extension || setExtension}`;
-};
+  return { name: fileName, extension: extension || setExtension };
+}
+
+export default createNameByUrls;

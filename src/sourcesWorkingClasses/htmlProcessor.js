@@ -29,14 +29,14 @@ export default class HtmlProcessor {
     }
 
     saveSourcesPromise() {
-        const crawlingPromises = extractValuesFromElementsAttrs(this.data)
-            .map((sourceUrl) => this.saveSource(outputDir, sourceUrl));
+        const crawlingPromises = this.extractValuesFromElementsAttrs()
+            .map((sourceUrl) => this.saveSource(this.outputDir, sourceUrl));
 
         return Promise.all(crawlingPromises);
     }
     // ###################################
     changeAttrsValuesInData() {
-        const $ = cheerio.load(data);
+        const $ = cheerio.load(this.data);
         const filesDirName = this.outputDir;
         $(this.elementName).each((_, element) => {
             const src = $(element).attr(this.attribute);

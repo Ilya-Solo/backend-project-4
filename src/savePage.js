@@ -1,6 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
-import createNameByUrl from './createNameByUrl.js';
+import createNameByUrls from './createNameByUrl.js';
 import path from 'path';
 
 const saveData = (fullPath, data) => {
@@ -19,20 +19,33 @@ const loadPage = (url, options) => {
     });
 }
 
+const createDir = (dirFullPath) => {
+  return fs.promises.stat(dirFullPath)
+    .catch(() => false)
+    .then((isDirectory) => !!isDirectory)
+    .then((isDirExists) => {
+      if (isDirExists) {
+        return fs.promises.rm(dirFullPath, { recursive: true });
+      }
+    })
+    .then(() => fs.promises.mkdir(dirFullPath))
+}
+
 const crawlAndSaveData = (directory, url, mainPageUrl, opts = {}) => {
-  const fileName = createNameByUrl(url, mainPageUrl);
+  const fileName = createNameByUrls(url, mainPageUrl);
   const filePath = path.join(directory, fileName);
 
   return loadPage(url, opts)
     .then((data) => {
       if (opts.responseType) {
-        return Buffer.from(data)
+        return Buffer.from(data);
       }
       return data;
     })
     .then((data) => saveData(filePath, data))
-    .then(() => filePath);
+    .then(() => filePath)
+    .catch(error => console.log('Aaaaaaaaaaaaa', url, error));
 }
 
-export { saveData, loadPage };
+export { saveData, loadPage, createDir };
 export default crawlAndSaveData;

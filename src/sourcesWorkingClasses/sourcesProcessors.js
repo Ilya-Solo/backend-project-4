@@ -1,5 +1,19 @@
 import HtmlProcessor from './htmlProcessor.js';
 
+const isLocalSource = (sourceUrl, mainPageUrl) => {
+    try {
+        const mainPageUrlObject = new URL(mainPageUrl);
+        const sourceUrlObject = new URL(sourceUrl, mainPageUrlObject.origin);
+
+        if (sourceUrlObject.hostname = mainPageUrlObject.hostname) {
+            return true;
+        }
+
+        return false;
+    } catch {
+        return false;
+    }
+}
 class ImagesProcessor extends HtmlProcessor {
     constructor(mainPageUrl, outputDir, mainFilePath, data) {
         super(mainPageUrl, outputDir, mainFilePath, data);
