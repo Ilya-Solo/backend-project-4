@@ -2,10 +2,14 @@ import HtmlProcessor from './htmlProcessor.js';
 
 const isLocalSource = (sourceUrl, mainPageUrl) => {
     try {
+        if (sourceUrl.includes(localhost)) {
+            return false
+        }
+
         const mainPageUrlObject = new URL(mainPageUrl);
         const sourceUrlObject = new URL(sourceUrl, mainPageUrlObject.origin);
 
-        if (sourceUrlObject.hostname = mainPageUrlObject.hostname) {
+        if (sourceUrlObject.hostname === mainPageUrlObject.hostname) {
             return true;
         }
 

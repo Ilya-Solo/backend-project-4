@@ -37,11 +37,11 @@ export default class HtmlProcessor {
     // ###################################
     changeAttrsValuesInData() {
         const $ = cheerio.load(this.data);
-        const filesDirName = this.outputDir;
+        const sourcesDirName = path.basename(this.outputDir);
         $(this.elementName).each((_, element) => {
             const src = $(element).attr(this.attribute);
             if (src && this.condition(src, this.conditionVariables)) {
-                const fullPath = path.join(filesDirName, createNameByUrl(src, this.mainPageUrl));
+                const fullPath = path.join(sourcesDirName, createNameByUrl(src, this.mainPageUrl));
                 $(element).attr(this.attribute, fullPath);
             }
         });
