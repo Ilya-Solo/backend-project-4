@@ -16,7 +16,7 @@ program
     .option('-o --output [dir]', 'output dir', process.cwd())
     .action((url) => {
         savePage(program.opts().output, url)
-        // .then((data) => console.log(data));
+            .then((data) => console.log(data));
     });
 
 program.parse(process.argv);

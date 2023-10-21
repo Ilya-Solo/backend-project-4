@@ -2,8 +2,8 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
-import createNameByUrls from './createNameByUrl.js';
 
+// ====================== 
 const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
@@ -13,9 +13,7 @@ const crawlContent = (url, crawlingOptions) => {
             }
             return data;
         })
-        .catch((error) => {
-            console.error(`An error occurred while downloading the content by url ${url}:`, error);
-        });
+        .catch((error) => '');
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
@@ -40,9 +38,29 @@ const createDir = (dirFullPath) => {
         .then(() => fs.promises.mkdir(dirFullPath))
 }
 
-const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = '', crawlingOptions = {}) => {
+const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {}) => {
     return crawlContent(sourceUrl, crawlingOptions)
         .then((data) => saveContent(data, fullOutputDirPath, sourceUrl, mainPageUrl))
+        .catch(error => console.log(error))
+}
+
+const configureUrlObj = (sourceUrl, mainPageUrl) => {
+    const mainPageUrlOrigin = (new URL(mainPageUrl)).origin;
+    const sourceUrlObj = new URL(sourceUrl, mainPageUrlOrigin);
+    const extensionMatch = sourceUrlObj.href.match(/(\.[A-Za-z0-9]+$)/);
+    let extension;
+    if (extensionMatch && extensionMatch[1]) {
+        extension = extensionMatch[1].toLowerCase();
+    }
+    const fileName = `${sourceUrlObj.hostname}${sourceUrlObj.pathname}`
+        .replace(extension, '')
+        .replace(/[^A-Za-z0-9]/g, '-');
+    return { name: fileName, extension: extension || '' }
+}
+
+const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html') => {
+    const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
+    return [urlObj.name, urlObj.extension || setExtension].join('')
 }
 
 const extractUrlsFromData = (data, mainPageUrl, elementConfigs) => {
@@ -57,7 +75,7 @@ const extractUrlsFromData = (data, mainPageUrl, elementConfigs) => {
         });
     });
 
-    return attrValues;
+    return urls;
 }
 
 const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
@@ -67,7 +85,7 @@ const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementC
         $(elementConfig.elementName).each((_, element) => {
             const src = $(element).attr(elementConfig.attribute);
             if (src && elementConfig.condition(src, mainPageUrl)) {
-                const fullPath = path.join(sourcesOutputDirName, createNameByUrl(src, mainPageUrl));
+                const fullPath = path.join(sourcesOutputDirName, createNameByUrls(src, mainPageUrl));
                 $(element).attr(elementConfig.attribute, fullPath);
             }
         });
@@ -78,7 +96,8 @@ const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementC
 
 const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
     const sourcesSavePromisesArr = extractUrlsFromData(data, mainPageUrl, elementConfigs)
-        .map((sourceUrl) => crawlAndSaveContent((sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' })));
+        .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href)
+        .map((sourceUrl) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }));
     return Promise.all(sourcesSavePromisesArr);
 }
 
@@ -87,9 +106,42 @@ const changeAndSaveMainFilePromise = (mainFilePath, data, sourcesOutputDirPath, 
     return fs.promises.writeFile(mainFilePath, changedData, 'utf-8');
 }
 
-const sourcesProcessingPromise = () => {
-
+const isLocalSource = (sourceUrl, mainPageUrl) => {
+    if (sourceUrl.includes('localhost')) {
+        return false
+    }
+    const mainPageUrlObject = new URL(mainPageUrl);
+    const sourceUrlObject = new URL(sourceUrl, mainPageUrlObject.origin);
+    return sourceUrlObject.hostname === mainPageUrlObject.hostname;
 }
 
-// crawlAndSaveContent('tmp', 'https://a.allegroimg.com/s180/1139a2/9db274c84ee88e2fe2c33e7876a6/DLUGA-LETNIA-SUKIENKA-DAMSKA-BAWELNIANA-WZORY-XXL.png', '', { responseType: 'arraybuffer' })
-//     .then((data) => console.log(data))
+const elementConfigs = [
+    { elementName: 'img', attribute: 'src', condition: () => true },
+    { elementName: 'link', attribute: 'href', condition: isLocalSource },
+    { elementName: 'script', attribute: 'src', condition: isLocalSource },
+];
+
+const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
+    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, '_files');
+    const sourcesDirFullPath = path.join(outputDir, sourcesDirName);
+    return createDir(sourcesDirFullPath)
+        .then(() => fs.promises.readFile(mainFilePath))
+        .then((data) => {
+            const sourcesSave = saveSourcesPromise(data, sourcesDirFullPath, mainPageUrl, elementConfigs);
+            const mainFileChange = changeAndSaveMainFilePromise(mainFilePath, data, sourcesDirFullPath, mainPageUrl, elementConfigs);
+            return Promise.all([sourcesSave, mainFileChange]);
+        })
+}
+
+const savePage = (outputDir, mainPageUrl) => {
+    let mainFilePath;
+    return crawlAndSaveContent(outputDir, mainPageUrl)
+        .then((filepath) => {
+            mainFilePath = filepath;
+            return filepath;
+        })
+        .then((filepath) => sourcesProcessingPromise(outputDir, mainPageUrl, filepath))
+        .then(() => mainFilePath);
+}
+
+export default savePage;
