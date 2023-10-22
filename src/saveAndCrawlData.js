@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
 
-// ====================== 
 const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
@@ -145,3 +144,5 @@ const savePage = (outputDir, mainPageUrl) => {
 }
 
 export default savePage;
+
+export { crawlAndSaveContent };
