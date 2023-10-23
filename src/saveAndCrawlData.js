@@ -12,7 +12,7 @@ const crawlContent = (url, crawlingOptions) => {
             }
             return data;
         })
-        .catch((error) => '');
+        .catch(() => '');
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
