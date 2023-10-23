@@ -3,6 +3,27 @@ import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
 
+// ================= Create Name By Urls Function ================
+const configureUrlObj = (sourceUrl, mainPageUrl) => {
+    const mainPageUrlOrigin = (new URL(mainPageUrl)).origin;
+    const sourceUrlObj = new URL(sourceUrl, mainPageUrlOrigin);
+    const extensionMatch = sourceUrlObj.href.match(/(\.[A-Za-z0-9]+$)/);
+    let extension;
+    if (extensionMatch && extensionMatch[1]) {
+        extension = extensionMatch[1].toLowerCase();
+    }
+    const fileName = `${sourceUrlObj.hostname}${sourceUrlObj.pathname}`
+        .replace(extension, '')
+        .replace(/[^A-Za-z0-9]/g, '-');
+    return { name: fileName, extension: extension || '' }
+}
+
+const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html') => {
+    const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
+    return [urlObj.name, urlObj.extension || setExtension].join('')
+}
+
+// ========== Basic File System and Crawling Functions ===========
 const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
@@ -43,25 +64,7 @@ const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceU
         .catch(error => console.log(error))
 }
 
-const configureUrlObj = (sourceUrl, mainPageUrl) => {
-    const mainPageUrlOrigin = (new URL(mainPageUrl)).origin;
-    const sourceUrlObj = new URL(sourceUrl, mainPageUrlOrigin);
-    const extensionMatch = sourceUrlObj.href.match(/(\.[A-Za-z0-9]+$)/);
-    let extension;
-    if (extensionMatch && extensionMatch[1]) {
-        extension = extensionMatch[1].toLowerCase();
-    }
-    const fileName = `${sourceUrlObj.hostname}${sourceUrlObj.pathname}`
-        .replace(extension, '')
-        .replace(/[^A-Za-z0-9]/g, '-');
-    return { name: fileName, extension: extension || '' }
-}
-
-const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html') => {
-    const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
-    return [urlObj.name, urlObj.extension || setExtension].join('')
-}
-
+// ================ Sources Processing Functions =================
 const extractUrlsFromData = (data, mainPageUrl, elementConfigs) => {
     const $ = cheerio.load(data);
     const urls = [];
@@ -132,6 +135,7 @@ const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
         })
 }
 
+// =================== Main Page Save Function ===================
 const savePage = (outputDir, mainPageUrl) => {
     let mainFilePath;
     return crawlAndSaveContent(outputDir, mainPageUrl)
