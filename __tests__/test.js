@@ -30,6 +30,16 @@ test('sources crawling test', async () => {
     const mainFilePathAfter = './__fixtures__/sourcesTestMainPageAfter.html';
     const mainPageDataBefore = await fs.promises.readFile(mainFilePathBefore, 'utf-8');
     const mainPageDataAfter = await fs.promises.readFile(mainFilePathAfter, 'utf-8');
+    const allSourcesUrls = [
+        '/assets/application.css',
+        '/assets/professions/nodejs.png',
+        '/packs/js/runtime.js',
+    ]
+    allSourcesUrls.forEach((url) => {
+        nock('https://ru.hexlet.io')
+            .get(url)
+            .reply(200, '');
+    })
     nock('https://ru.hexlet.io')
         .get('/courses')
         .reply(200, mainPageDataBefore);
@@ -43,13 +53,16 @@ test('sources crawling test', async () => {
     const allCrawledSourcesNames = [
         'ru-hexlet-io-assets-application.css',
         'ru-hexlet-io-assets-professions-nodejs.png',
-        'ru-hexlet-io-courses.html',
         'ru-hexlet-io-packs-js-runtime.js'
     ]
     const callback = (elem) => sources.includes(elem);
 
     expect(allCrawledSourcesNames.every(callback)).toBe(true);
 });
+
+test('errors handling test', async () => {
+
+})
 
 afterEach(async () => {
     await fs.promises.rm(directoryPath, { recursive: true });

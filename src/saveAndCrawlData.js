@@ -2,6 +2,10 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
+import createDebug from 'debug';
+import Listr from 'listr';
+
+const debug = createDebug('page-loader');
 
 // ================= Create Name By Urls Function ================
 const configureUrlObj = (sourceUrl, mainPageUrl) => {
@@ -33,7 +37,14 @@ const crawlContent = (url, crawlingOptions) => {
             }
             return data;
         })
-        .catch(() => '');
+        .catch((error) => {
+            if (error.response) {
+                console.error(`Data by url ${url} can not be crawled. ${error.message}. Will be saved with empty content`);
+                return '';
+            }
+            console.error(`Axios error occured by url ${url}:`, error.message)
+            process.exit(1);
+        })
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
@@ -42,20 +53,17 @@ const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath)
         .catch((error) => {
-            console.error('Error writing to file:', error);
+            console.error('Error writing to file:', error.message);
+            process.exit(1);
         });
 }
 
 const createDir = (dirFullPath) => {
-    return fs.promises.stat(dirFullPath)
-        .catch(() => false)
-        .then((isDirectory) => !!isDirectory)
-        .then((isDirExists) => {
-            if (isDirExists) {
-                return fs.promises.rm(dirFullPath, { recursive: true });
-            }
+    return fs.promises.mkdir(dirFullPath)
+        .catch((error) => {
+            console.error(`Directory can not be created:`, error.message);
+            process.exit(1);
         })
-        .then(() => fs.promises.mkdir(dirFullPath))
 }
 
 const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {}) => {
@@ -97,10 +105,27 @@ const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementC
 }
 
 const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
-    const sourcesSavePromisesArr = extractUrlsFromData(data, mainPageUrl, elementConfigs)
-        .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href)
-        .map((sourceUrl) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }));
-    return Promise.all(sourcesSavePromisesArr);
+    const urlsToCrawl = extractUrlsFromData(data, mainPageUrl, elementConfigs)
+        .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href);
+
+    console.log(urlsToCrawl)
+    const tasks = urlsToCrawl.map((sourceUrl) => ({
+        title: sourceUrl,
+        task: () => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' })
+    }));
+
+    const taskList = new Listr(tasks, {
+        concurrent: true, // Adjust this to control the level of concurrency
+        exitOnError: false, // Continue with other tasks even if one fails
+    });
+
+    return taskList.run();
+
+
+    // const sourcesSavePromisesArr = extractUrlsFromData(data, mainPageUrl, elementConfigs)
+    //     .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href)
+    //     .map((sourceUrl) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }));
+    // return Promise.all(sourcesSavePromisesArr);
 }
 
 const changeAndSaveMainFilePromise = (mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
@@ -138,13 +163,21 @@ const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
 // =================== Main Page Save Function ===================
 const savePage = (outputDir, mainPageUrl) => {
     let mainFilePath;
+    debug('Start main page crawling')
     return crawlAndSaveContent(outputDir, mainPageUrl)
         .then((filepath) => {
             mainFilePath = filepath;
+            debug('Main page content has been crawled');
+            debug('Start sources crawling')
             return filepath;
         })
-        .then((filepath) => sourcesProcessingPromise(outputDir, mainPageUrl, filepath))
-        .then(() => mainFilePath);
+        .then((filepath) => {
+            return sourcesProcessingPromise(outputDir, mainPageUrl, filepath)
+        })
+        .then(() => {
+            debug('Sources have been crawled')
+            return mainFilePath
+        });
 }
 
 export default savePage;
