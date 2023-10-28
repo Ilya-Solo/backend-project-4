@@ -22,8 +22,11 @@ const configureUrlObj = (sourceUrl, mainPageUrl) => {
     return { name: fileName, extension: extension || '' }
 }
 
-const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html') => {
+const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html', setExtensionForce = false) => {
     const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
+    if (setExtensionForce) {
+        return [urlObj.name, setExtension].join('')
+    }
     return [urlObj.name, urlObj.extension || setExtension].join('')
 }
 
@@ -31,19 +34,15 @@ const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html') => {
 const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
+        // .catch((error) => {
+        //     console.error(`Axios error occured by url ${url}:`, error.message, error.stack)
+        //     process.exit(1);
+        // })
         .then((data) => {
             if (crawlingOptions.responseType) {
                 return Buffer.from(data);
             }
             return data;
-        })
-        .catch((error) => {
-            if (error.response) {
-                console.error(`Data by url ${url} can not be crawled. ${error.message}. Will be saved with empty content`);
-                return '';
-            }
-            console.error(`Axios error occured by url ${url}:`, error.message)
-            process.exit(1);
         })
 }
 
@@ -53,23 +52,25 @@ const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath)
         .catch((error) => {
-            console.error('Error writing to file:', error.message);
-            process.exit(1);
+            if (error && error.code && error.syscall) {
+                console.error('Error writing to file:', error.message, error.stack);
+                process.exit(1);
+            }
+            throw error;
         });
 }
 
 const createDir = (dirFullPath) => {
     return fs.promises.mkdir(dirFullPath)
         .catch((error) => {
-            console.error(`Directory can not be created:`, error.message);
+            console.error(`Directory can not be created:`, error.message, error.stack);
             process.exit(1);
         })
 }
 
 const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {}) => {
     return crawlContent(sourceUrl, crawlingOptions)
-        .then((data) => saveContent(data, fullOutputDirPath, sourceUrl, mainPageUrl))
-        .catch(error => console.log(error))
+        .then((data) => saveContent(data, fullOutputDirPath, sourceUrl, mainPageUrl));
 }
 
 // ================ Sources Processing Functions =================
@@ -108,24 +109,20 @@ const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConf
     const urlsToCrawl = extractUrlsFromData(data, mainPageUrl, elementConfigs)
         .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href);
 
-    console.log(urlsToCrawl)
     const tasks = urlsToCrawl.map((sourceUrl) => ({
         title: sourceUrl,
-        task: () => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' })
+        task: (_ctx, task) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }).catch((error) => {
+            if (axios.isAxiosError(error)) {
+                task.skip(error.message);
+            } else {
+                throw error;
+            }
+        })
     }));
 
-    const taskList = new Listr(tasks, {
-        concurrent: true, // Adjust this to control the level of concurrency
-        exitOnError: false, // Continue with other tasks even if one fails
-    });
+    const taskList = new Listr(tasks, { concurrent: true });
 
     return taskList.run();
-
-
-    // const sourcesSavePromisesArr = extractUrlsFromData(data, mainPageUrl, elementConfigs)
-    //     .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href)
-    //     .map((sourceUrl) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }));
-    // return Promise.all(sourcesSavePromisesArr);
 }
 
 const changeAndSaveMainFilePromise = (mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
@@ -134,9 +131,6 @@ const changeAndSaveMainFilePromise = (mainFilePath, data, sourcesOutputDirPath, 
 }
 
 const isLocalSource = (sourceUrl, mainPageUrl) => {
-    if (sourceUrl.includes('localhost')) {
-        return false
-    }
     const mainPageUrlObject = new URL(mainPageUrl);
     const sourceUrlObject = new URL(sourceUrl, mainPageUrlObject.origin);
     return sourceUrlObject.hostname === mainPageUrlObject.hostname;
@@ -149,7 +143,7 @@ const elementConfigs = [
 ];
 
 const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
-    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, '_files');
+    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, '_files', true);
     const sourcesDirFullPath = path.join(outputDir, sourcesDirName);
     return createDir(sourcesDirFullPath)
         .then(() => fs.promises.readFile(mainFilePath))
@@ -182,4 +176,4 @@ const savePage = (outputDir, mainPageUrl) => {
 
 export default savePage;
 
-export { crawlAndSaveContent };
+export { crawlAndSaveContent, saveContent, createDir, crawlContent };

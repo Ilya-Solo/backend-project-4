@@ -3,7 +3,8 @@ import path from 'path';
 import nock from 'nock';
 import fs from 'fs';
 import os from 'os';
-import savePage, { crawlAndSaveContent } from '../src/saveAndCrawlData.js';
+import savePage, { crawlAndSaveContent, saveContent, createDir, crawlContent } from '../src/saveAndCrawlData.js';
+import jest from 'jest';
 
 nock.disableNetConnect();
 
@@ -59,9 +60,30 @@ test('sources crawling test', async () => {
 
     expect(allCrawledSourcesNames.every(callback)).toBe(true);
 });
+describe('errors handling test', () => {
+    test('createDir Test', async () => {
+        // const fakeDir = path.join(directoryPath, 'fakeDir/dirName')
 
-test('errors handling test', async () => {
+        // expect.assertions(1);
+        // try {
+        //     await createDir(fakeDir);
+        // } catch (e) {
+        //     console.log('das');
+        //     expect(e).toMatch('error');
+        // }
+    })
 
+    test('axios error handling test', async () => {
+        // nock('https://ru.hexlet.io')
+        //     .get('/courses')
+        //     .reply(404);
+        // // const a = crawlAndSaveContent(directoryPath, 'https://ru.hexlet.io/courses')
+        // expect(() => { throw Error('') }).toThrow();
+    })
+
+    test('fs error handling test', async () => {
+
+    })
 })
 
 afterEach(async () => {
