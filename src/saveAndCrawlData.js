@@ -34,10 +34,6 @@ const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html', setExt
 const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
-        // .catch((error) => {
-        //     console.error(`Axios error occured by url ${url}:`, error.message, error.stack)
-        //     process.exit(1);
-        // })
         .then((data) => {
             if (crawlingOptions.responseType) {
                 return Buffer.from(data);
@@ -52,9 +48,8 @@ const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath)
         .catch((error) => {
-            if (error && error.code && error.syscall) {
-                console.error('Error writing to file:', error.message, error.stack);
-                process.exit(1);
+            if (error.code === 'ENOENT') {
+                throw new Error('Directory does not exist:', error.message, error.stack);
             }
             throw error;
         });
@@ -62,10 +57,6 @@ const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
 
 const createDir = (dirFullPath) => {
     return fs.promises.mkdir(dirFullPath)
-        .catch((error) => {
-            console.error(`Directory can not be created:`, error.message, error.stack);
-            process.exit(1);
-        })
 }
 
 const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {}) => {

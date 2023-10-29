@@ -3,8 +3,7 @@ import path from 'path';
 import nock from 'nock';
 import fs from 'fs';
 import os from 'os';
-import savePage, { crawlAndSaveContent, saveContent, createDir, crawlContent } from '../src/saveAndCrawlData.js';
-import jest from 'jest';
+import savePage from '../src/saveAndCrawlData.js';
 
 nock.disableNetConnect();
 
@@ -17,13 +16,12 @@ beforeEach(async () => {
 test('file content filling test', async () => {
     const request = nock('https://ru.hexlet.io')
         .get('/courses')
-        .reply(200, 'some text ABC');
+        .reply(200, '<html><head></head><body>some text ABC</body></html>');
 
-    const filePath = path.join(directoryPath, 'ru-hexlet-io-courses.html');
-    await crawlAndSaveContent(directoryPath, 'https://ru.hexlet.io/courses');
+    const filePath = await savePage(directoryPath, 'https://ru.hexlet.io/courses');
 
     expect(request.isDone()).toBe(true);
-    expect(await fs.promises.readFile(filePath, 'utf-8')).toBe('some text ABC');
+    expect(await fs.promises.readFile(filePath, 'utf-8')).toBe('<html><head></head><body>some text ABC</body></html>');
 });
 
 test('sources crawling test', async () => {
@@ -60,30 +58,13 @@ test('sources crawling test', async () => {
 
     expect(allCrawledSourcesNames.every(callback)).toBe(true);
 });
-describe('errors handling test', () => {
-    test('createDir Test', async () => {
-        // const fakeDir = path.join(directoryPath, 'fakeDir/dirName')
 
-        // expect.assertions(1);
-        // try {
-        //     await createDir(fakeDir);
-        // } catch (e) {
-        //     console.log('das');
-        //     expect(e).toMatch('error');
-        // }
-    })
-
-    test('axios error handling test', async () => {
-        // nock('https://ru.hexlet.io')
-        //     .get('/courses')
-        //     .reply(404);
-        // // const a = crawlAndSaveContent(directoryPath, 'https://ru.hexlet.io/courses')
-        // expect(() => { throw Error('') }).toThrow();
-    })
-
-    test('fs error handling test', async () => {
-
-    })
+test('dir existance error handling Test', async () => {
+    const fakeDir = path.join(directoryPath, 'fakeDir/dirName');
+    nock('https://ru.hexlet.io')
+        .get('/courses')
+        .reply(200, 'some data');
+    await expect(savePage(fakeDir, 'https://ru.hexlet.io/courses')).rejects.toThrow('Directory does not exist');
 })
 
 afterEach(async () => {
