@@ -26,6 +26,6 @@
     "listr": "^0.14.3"
   },
   "bin": {
-    "page-loader": "bin/savePage.js"
+    "page-loader": "bin/index.js"
   }
 }

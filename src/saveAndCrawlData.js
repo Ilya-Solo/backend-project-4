@@ -40,6 +40,12 @@ const crawlContent = (url, crawlingOptions) => {
             }
             return data;
         })
+        .catch((error) => {
+            if (axios.isAxiosError(error)) {
+                throw new Error(`Source ${url} can not be loaded. ${error.message}`);
+            }
+            throw error;
+        })
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
@@ -102,13 +108,7 @@ const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConf
 
     const tasks = urlsToCrawl.map((sourceUrl) => ({
         title: sourceUrl,
-        task: (_ctx, task) => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' }).catch((error) => {
-            if (axios.isAxiosError(error)) {
-                task.skip(error.message);
-            } else {
-                throw error;
-            }
-        })
+        task: () => crawlAndSaveContent(sourcesOutputDirPath, sourceUrl, mainPageUrl, { responseType: 'arraybuffer' })
     }));
 
     const taskList = new Listr(tasks, { concurrent: true });

@@ -2,7 +2,7 @@
 
 import { createRequire } from 'module';
 import { program } from 'commander';
-import savePage from '../src/main.js';
+import savePage from '../src/index.js';
 
 const require = createRequire(import.meta.url);
 const packageConfig = require('../package.json');
