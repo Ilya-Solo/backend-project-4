@@ -4,6 +4,7 @@ import path from 'path';
 import * as cheerio from 'cheerio';
 import createDebug from 'debug';
 import Listr from 'listr';
+import 'axios-debug-log';
 
 const debug = createDebug('page-loader');
 
@@ -40,29 +41,23 @@ const crawlContent = (url, crawlingOptions) => {
             }
             return data;
         })
-        .catch((error) => {
-            if (axios.isAxiosError(error)) {
-                throw new Error(`Source ${url} can not be loaded. ${error.message}`);
-            }
-            throw error;
-        })
+    // .catch((error) => {
+    //     if (axios.isAxiosError(error)) {
+    //         throw new Error(`Source ${url} can not be loaded. ${error.message}`);
+    //     }
+    //     throw error;
+    // })
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
     const fileName = createNameByUrls(sourceUrl, mainPageUrl);
     const fullFilePath = path.join(outputDirPath, fileName);
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
-        .then(() => fullFilePath)
-        .catch((error) => {
-            if (error.code === 'ENOENT') {
-                throw new Error('Directory does not exist:', error.message, error.stack);
-            }
-            throw error;
-        });
+        .then(() => fullFilePath);
 }
 
 const createDir = (dirFullPath) => {
-    return fs.promises.mkdir(dirFullPath)
+    return fs.promises.mkdir(dirFullPath);
 }
 
 const crawlAndSaveContent = (fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {}) => {
@@ -161,10 +156,8 @@ const savePage = (outputDir, mainPageUrl) => {
         })
         .then(() => {
             debug('Sources have been crawled')
-            return mainFilePath
+            return mainFilePath;
         });
 }
 
 export default savePage;
-
-export { crawlAndSaveContent, saveContent, createDir, crawlContent };

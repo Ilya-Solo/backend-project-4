@@ -25,6 +25,8 @@ test('file content filling test', async () => {
 });
 
 test('sources crawling test', async () => {
+    const originalStdout = process.stdout.write;
+    process.stdout.write = () => { };
     const mainFilePathBefore = './__fixtures__/sourcesTestMainPageBefore.html';
     const mainFilePathAfter = './__fixtures__/sourcesTestMainPageAfter.html';
     const mainPageDataBefore = await fs.promises.readFile(mainFilePathBefore, 'utf-8');
@@ -43,7 +45,7 @@ test('sources crawling test', async () => {
         .get('/courses')
         .reply(200, mainPageDataBefore);
     await savePage(directoryPath, 'https://ru.hexlet.io/courses');
-
+    process.stdout.write = originalStdout
     const filePath = path.join(directoryPath, 'ru-hexlet-io-courses.html');
     expect((await fs.promises.readFile(filePath, 'utf-8')).replace(/(\n| )/g, '')).toBe(mainPageDataAfter.replace(/(\n| )/g, ''));
 
@@ -59,13 +61,23 @@ test('sources crawling test', async () => {
     expect(allCrawledSourcesNames.every(callback)).toBe(true);
 });
 
-test('dir existance error handling Test', async () => {
-    const fakeDir = path.join(directoryPath, 'fakeDir/dirName');
-    nock('https://ru.hexlet.io')
-        .get('/courses')
-        .reply(200, 'some data');
-    await expect(savePage(fakeDir, 'https://ru.hexlet.io/courses')).rejects.toThrow('Directory does not exist');
+describe('Error handling tests', () => {
+    test('no response ', async () => {
+        const invalidBaseUrl = 'https://ru.hexlet.io';
+        const expectedError = `getaddrinfo ENOTFOUND ${invalidBaseUrl}`;
+        nock(invalidBaseUrl).persist().get('/').replyWithError(expectedError);
+        await expect(savePage(directoryPath, 'https://ru.hexlet.io/'))
+            .rejects.toThrow(/ENOTFOUND/);
+    });
+    test('dir existance error handling', async () => {
+        const fakeDir = path.join(directoryPath, 'fakeDir/dirName');
+        nock('https://ru.hexlet.io')
+            .get('/courses')
+            .reply(200, 'some data');
+        await expect(savePage(fakeDir, 'https://ru.hexlet.io/courses')).rejects.toThrow(/ENOENT/);
+    });
 })
+
 
 afterEach(async () => {
     await fs.promises.rm(directoryPath, { recursive: true });

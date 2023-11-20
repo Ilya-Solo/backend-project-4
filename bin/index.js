@@ -16,6 +16,10 @@ program
     .option('-o --output [dir]', 'output dir', process.cwd())
     .action((url) => {
         savePage(program.opts().output, url)
+            .catch((error) => {
+                console.error(error.message);
+                process.exit(1);
+            })
             .then((data) => console.log(`Page was successfully downloaded into '${data}'`));
     });
 
