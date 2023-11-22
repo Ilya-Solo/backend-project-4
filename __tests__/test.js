@@ -3,7 +3,7 @@ import path from 'path';
 import nock from 'nock';
 import fs from 'fs';
 import os from 'os';
-import savePage from '../src/saveAndCrawlData.js';
+import savePage from '../src/index.js';
 
 nock.disableNetConnect();
 
