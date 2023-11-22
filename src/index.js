@@ -36,17 +36,11 @@ const crawlContent = (url, crawlingOptions) => {
     return axios.get(url, crawlingOptions)
         .then((response) => response.data)
         .then((data) => {
-            if (crawlingOptions.responseType) {
+            if (crawlingOptions.responseType === 'arraybuffer') {
                 return Buffer.from(data);
             }
             return data;
         })
-    // .catch((error) => {
-    //     if (axios.isAxiosError(error)) {
-    //         throw new Error(`Source ${url} can not be loaded. ${error.message}`);
-    //     }
-    //     throw error;
-    // })
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
@@ -68,15 +62,12 @@ const crawlAndSaveContent = ({ fullOutputDirPath, sourceUrl, mainPageUrl = sourc
 // ================ Sources Processing Functions =================
 const extractUrlsFromData = (data, mainPageUrl, elementConfigs) => {
     const $ = cheerio.load(data);
-    const urls = [];
-    elementConfigs.forEach((elementConfig) => {
-        $(elementConfig.elementName).each((_, element) => {
+    const urls = elementConfigs.map((elementConfig) => {
+        return $(elementConfig.elementName).toArray().filter((element) => {
             const src = $(element).attr(elementConfig.attribute);
-            if (src && elementConfig.condition(src, mainPageUrl)) {
-                urls.push(src);
-            }
-        });
-    });
+            return src && elementConfig.condition(src, mainPageUrl)
+        }).map(element => $(element).attr(elementConfig.attribute))
+    }).flat();
 
     return urls;
 }
