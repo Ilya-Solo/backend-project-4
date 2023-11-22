@@ -23,12 +23,17 @@ const configureUrlObj = (sourceUrl, mainPageUrl) => {
     return { name: fileName, extension: extension || '' }
 }
 
-const createNameByUrls = (sourceUrl, mainPageUrl, setExtension = '.html', setExtensionForce = false) => {
+const createNameByUrls = (sourceUrl, mainPageUrl, usageCase) => {
     const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
-    if (setExtensionForce) {
-        return [urlObj.name, setExtension].join('')
+
+    switch (usageCase) {
+        case 'Filename':
+            return [urlObj.name, urlObj.extension || '.html'].join('');
+        case 'Sourcesdir':
+            return [urlObj.name, '_files'].join('');
+        default:
+            throw Error('No such a naming case');
     }
-    return [urlObj.name, urlObj.extension || setExtension].join('')
 }
 
 // ========== Basic File System and Crawling Functions ===========
@@ -44,7 +49,7 @@ const crawlContent = (url, crawlingOptions) => {
 }
 
 const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
-    const fileName = createNameByUrls(sourceUrl, mainPageUrl);
+    const fileName = createNameByUrls(sourceUrl, mainPageUrl, 'Filename');
     const fullFilePath = path.join(outputDirPath, fileName);
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath);
@@ -79,7 +84,7 @@ const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementC
         $(elementConfig.elementName).each((_, element) => {
             const src = $(element).attr(elementConfig.attribute);
             if (src && elementConfig.condition(src, mainPageUrl)) {
-                const fullPath = path.join(sourcesOutputDirName, createNameByUrls(src, mainPageUrl));
+                const fullPath = path.join(sourcesOutputDirName, createNameByUrls(src, mainPageUrl, 'Filename'));
                 $(element).attr(elementConfig.attribute, fullPath);
             }
         });
@@ -120,7 +125,7 @@ const elementConfigs = [
 ];
 
 const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
-    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, '_files', true);
+    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, 'Sourcesdir');
     const sourcesDirFullPath = path.join(outputDir, sourcesDirName);
     return createDir(sourcesDirFullPath)
         .then(() => fs.promises.readFile(mainFilePath))
