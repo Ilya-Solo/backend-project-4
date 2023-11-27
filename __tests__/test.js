@@ -65,7 +65,7 @@ describe('Error handling tests', () => {
     test('no response ', async () => {
         const invalidBaseUrl = 'https://ru.hexlet.io';
         const expectedError = `getaddrinfo ENOTFOUND ${invalidBaseUrl}`;
-        nock(invalidBaseUrl).persist().get('/').replyWithError(expectedError);
+        nock(invalidBaseUrl).get('/').replyWithError(expectedError);
         await expect(savePage(directoryPath, 'https://ru.hexlet.io/'))
             .rejects.toThrow(/ENOTFOUND/);
     });
