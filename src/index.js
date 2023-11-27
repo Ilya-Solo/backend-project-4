@@ -23,7 +23,7 @@ const configureUrlObj = (sourceUrl, mainPageUrl) => {
     return { name: fileName, extension: extension || '' }
 }
 
-const createNameByUrls = (sourceUrl, mainPageUrl, usageCase) => {
+const createNameByUrls = ({ sourceUrl, mainPageUrl, usageCase }) => {
     const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
 
     switch (usageCase) {
@@ -48,8 +48,8 @@ const crawlContent = (url, crawlingOptions) => {
         })
 }
 
-const saveContent = (data, outputDirPath, sourceUrl, mainPageUrl) => {
-    const fileName = createNameByUrls(sourceUrl, mainPageUrl, 'Filename');
+const saveContent = ({ data, outputDirPath, sourceUrl, mainPageUrl }) => {
+    const fileName = createNameByUrls({ sourceUrl, mainPageUrl, usageCase: 'Filename' });
     const fullFilePath = path.join(outputDirPath, fileName);
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath);
@@ -61,40 +61,41 @@ const createDir = (dirFullPath) => {
 
 const crawlAndSaveContent = ({ fullOutputDirPath, sourceUrl, mainPageUrl = sourceUrl, crawlingOptions = {} }) => {
     return crawlContent(sourceUrl, crawlingOptions)
-        .then((data) => saveContent(data, fullOutputDirPath, sourceUrl, mainPageUrl));
+        .then((data) => saveContent({ data, outputDirPath: fullOutputDirPath, sourceUrl, mainPageUrl }));
 }
 
 // ================ Sources Processing Functions =================
-const extractUrlsFromData = (data, mainPageUrl, elementConfigs) => {
+const extractUrlsFromData = ({ data, mainPageUrl, elementsConfig }) => {
     const $ = cheerio.load(data);
-    const urls = elementConfigs.map((elementConfig) => {
-        return $(elementConfig.elementName).toArray().filter((element) => {
-            const src = $(element).attr(elementConfig.attribute);
-            return src && elementConfig.condition(src, mainPageUrl)
-        }).map(element => $(element).attr(elementConfig.attribute))
-    }).flat();
+    const urls = Object.entries(elementsConfig).flatMap(([elementName, { attribute, condition }]) => {
+        return $(elementName).toArray().filter((element) => {
+            const src = $(element).attr(attribute);
+            return src && condition(src, mainPageUrl);
+        }).map(element => $(element).attr(attribute));
+    })
 
     return urls;
 }
 
-const changeUrlValuesInData = (data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
+const changeUrlValuesInData = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
     const $ = cheerio.load(data);
     const sourcesOutputDirName = path.basename(sourcesOutputDirPath);
-    elementConfigs.forEach((elementConfig) => {
-        $(elementConfig.elementName).each((_, element) => {
-            const src = $(element).attr(elementConfig.attribute);
-            if (src && elementConfig.condition(src, mainPageUrl)) {
-                const fullPath = path.join(sourcesOutputDirName, createNameByUrls(src, mainPageUrl, 'Filename'));
-                $(element).attr(elementConfig.attribute, fullPath);
-            }
-        });
-    });
+    Object.entries(elementsConfig).forEach(([elementName, { attribute, condition }]) => {
+        $(elementName).toArray().filter((element) => {
+            const src = $(element).attr(attribute);
+            return src && condition(src, mainPageUrl)
+        }).forEach((element) => {
+            const src = $(element).attr(attribute);
+            const fullPath = path.join(sourcesOutputDirName, createNameByUrls({ sourceUrl: src, mainPageUrl, usageCase: 'Filename' }));
+            $(element).attr(attribute, fullPath);
+        })
+    })
 
     return $.html();
 }
 
-const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
-    const urlsToCrawl = extractUrlsFromData(data, mainPageUrl, elementConfigs)
+const saveSources = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
+    const urlsToCrawl = extractUrlsFromData({ data, mainPageUrl, elementsConfig })
         .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href);
 
     const tasks = urlsToCrawl.map((sourceUrl) => ({
@@ -107,8 +108,8 @@ const saveSourcesPromise = (data, sourcesOutputDirPath, mainPageUrl, elementConf
     return taskList.run();
 }
 
-const changeAndSaveMainFilePromise = (mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementConfigs) => {
-    const changedData = changeUrlValuesInData(data, sourcesOutputDirPath, mainPageUrl, elementConfigs);
+const changeAndSaveMainFile = ({ mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
+    const changedData = changeUrlValuesInData({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig });
     return fs.promises.writeFile(mainFilePath, changedData, 'utf-8');
 }
 
@@ -118,20 +119,29 @@ const isLocalSource = (sourceUrl, mainPageUrl) => {
     return sourceUrlObject.hostname === mainPageUrlObject.hostname;
 }
 
-const elementConfigs = [
-    { elementName: 'img', attribute: 'src', condition: () => true },
-    { elementName: 'link', attribute: 'href', condition: isLocalSource },
-    { elementName: 'script', attribute: 'src', condition: isLocalSource },
-];
+const elementsConfig = {
+    'img': {
+        attribute: 'src',
+        condition: () => true
+    },
+    'link': {
+        attribute: 'href',
+        condition: isLocalSource
+    },
+    'script': {
+        attribute: 'src',
+        condition: isLocalSource
+    }
+}
 
-const sourcesProcessingPromise = (outputDir, mainPageUrl, mainFilePath) => {
-    const sourcesDirName = createNameByUrls(mainPageUrl, mainPageUrl, 'Sourcesdir');
+const processSources = ({ outputDir, mainPageUrl, mainFilePath }) => {
+    const sourcesDirName = createNameByUrls({ sourceUrl: mainPageUrl, mainPageUrl, usageCase: 'Sourcesdir' });
     const sourcesDirFullPath = path.join(outputDir, sourcesDirName);
     return createDir(sourcesDirFullPath)
         .then(() => fs.promises.readFile(mainFilePath))
         .then((data) => {
-            const sourcesSave = saveSourcesPromise(data, sourcesDirFullPath, mainPageUrl, elementConfigs);
-            const mainFileChange = changeAndSaveMainFilePromise(mainFilePath, data, sourcesDirFullPath, mainPageUrl, elementConfigs);
+            const sourcesSave = saveSources({ data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
+            const mainFileChange = changeAndSaveMainFile({ mainFilePath, data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
             return Promise.all([sourcesSave, mainFileChange]);
         })
 }
@@ -148,7 +158,7 @@ const savePage = (outputDir, mainPageUrl) => {
             return filepath;
         })
         .then((filepath) => {
-            return sourcesProcessingPromise(outputDir, mainPageUrl, filepath)
+            return processSources({ outputDir, mainPageUrl, mainFilePath: filepath })
         })
         .then(() => {
             debug('Sources have been crawled')
