@@ -67,12 +67,17 @@ const crawlAndSaveContent = ({ fullOutputDirPath, sourceUrl, mainPageUrl = sourc
 // ================ Sources Processing Functions =================
 const extractUrlsFromData = ({ data, mainPageUrl, elementsConfig }) => {
     const $ = cheerio.load(data);
-    const urls = Object.entries(elementsConfig).flatMap(([elementName, { attribute, condition }]) => {
-        return $(elementName).toArray().filter((element) => {
+    const urls = Object.keys(elementsConfig)
+        .flatMap((elementName) => $(elementName).toArray())
+        .filter((element) => {
+            const { attribute, condition } = elementsConfig[element.tagName];
             const src = $(element).attr(attribute);
             return src && condition(src, mainPageUrl);
-        }).map(element => $(element).attr(attribute));
-    })
+        })
+        .map(element => {
+            const { attribute } = elementsConfig[element.tagName];
+            return $(element).attr(attribute);
+        })
 
     return urls;
 }
@@ -80,21 +85,24 @@ const extractUrlsFromData = ({ data, mainPageUrl, elementsConfig }) => {
 const changeUrlValuesInData = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
     const $ = cheerio.load(data);
     const sourcesOutputDirName = path.basename(sourcesOutputDirPath);
-    Object.entries(elementsConfig).forEach(([elementName, { attribute, condition }]) => {
-        $(elementName).toArray().filter((element) => {
-            const src = $(element).attr(attribute);
+    const selector = Object.keys(elementsConfig).join(', ')
+    $(selector).toArray()
+        .filter(element => {
+            const { attribute, condition } = elementsConfig[element.tagName]
+            const src = $(element).attr(attribute)
             return src && condition(src, mainPageUrl)
-        }).forEach((element) => {
+        })
+        .forEach((element) => {
+            const { attribute } = elementsConfig[element.tagName]
             const src = $(element).attr(attribute);
             const fullPath = path.join(sourcesOutputDirName, createNameByUrls({ sourceUrl: src, mainPageUrl, usageCase: 'Filename' }));
             $(element).attr(attribute, fullPath);
         })
-    })
 
     return $.html();
 }
 
-const saveSources = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
+const saveSourcesPromise = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
     const urlsToCrawl = extractUrlsFromData({ data, mainPageUrl, elementsConfig })
         .map((sourceUrl) => (new URL(sourceUrl, mainPageUrl)).href);
 
@@ -108,7 +116,7 @@ const saveSources = ({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig }
     return taskList.run();
 }
 
-const changeAndSaveMainFile = ({ mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
+const changeAndSaveMainFilePromise = ({ mainFilePath, data, sourcesOutputDirPath, mainPageUrl, elementsConfig }) => {
     const changedData = changeUrlValuesInData({ data, sourcesOutputDirPath, mainPageUrl, elementsConfig });
     return fs.promises.writeFile(mainFilePath, changedData, 'utf-8');
 }
@@ -140,8 +148,8 @@ const processSources = ({ outputDir, mainPageUrl, mainFilePath }) => {
     return createDir(sourcesDirFullPath)
         .then(() => fs.promises.readFile(mainFilePath))
         .then((data) => {
-            const sourcesSave = saveSources({ data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
-            const mainFileChange = changeAndSaveMainFile({ mainFilePath, data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
+            const sourcesSave = saveSourcesPromise({ data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
+            const mainFileChange = changeAndSaveMainFilePromise({ mainFilePath, data, sourcesOutputDirPath: sourcesDirFullPath, mainPageUrl, elementsConfig });
             return Promise.all([sourcesSave, mainFileChange]);
         })
 }
@@ -149,19 +157,19 @@ const processSources = ({ outputDir, mainPageUrl, mainFilePath }) => {
 // =================== Main Page Save Function ===================
 const savePage = (outputDir, mainPageUrl) => {
     let mainFilePath;
-    debug('Start main page crawling')
+    debug('Start main page crawling');
     return crawlAndSaveContent({ fullOutputDirPath: outputDir, sourceUrl: mainPageUrl })
         .then((filepath) => {
             mainFilePath = filepath;
             debug('Main page content has been crawled');
-            debug('Start sources crawling')
+            debug('Start sources crawling');
             return filepath;
         })
         .then((filepath) => {
             return processSources({ outputDir, mainPageUrl, mainFilePath: filepath })
         })
         .then(() => {
-            debug('Sources have been crawled')
+            debug('Sources have been crawled');
             return mainFilePath;
         });
 }
