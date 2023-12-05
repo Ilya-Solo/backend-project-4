@@ -50,7 +50,7 @@ const crawlContent = (url, crawlingOptions) => {
 
 const saveContent = ({ data, outputDirPath, sourceUrl, mainPageUrl }) => {
     const fileName = createNameByUrls({ sourceUrl, mainPageUrl, usageCase: 'Filename' });
-    const fullFilePath = path.join(outputDirPath, fileName);
+    const fullFilePath = path.join(outputDirPath.toString(), fileName);
     return fs.promises.writeFile(fullFilePath, data, 'utf-8')
         .then(() => fullFilePath);
 }
