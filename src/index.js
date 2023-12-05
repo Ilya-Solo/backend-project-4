@@ -74,15 +74,14 @@ const crawlAndSaveContent = ({
   sourceUrl,
   mainPageUrl = sourceUrl,
   crawlingOptions = {},
-}) => {
-  return crawlContent(sourceUrl, crawlingOptions)
-    .then((data) => saveContent({
-      data,
-      outputDirPath: fullOutputDirPath,
-      sourceUrl,
-      mainPageUrl,
-    }));
-};
+}) => crawlContent(sourceUrl, crawlingOptions)
+  .then((data) => saveContent({
+    data,
+    outputDirPath: fullOutputDirPath,
+    sourceUrl,
+    mainPageUrl,
+  }));
+
 
 // ================ Sources Processing Functions =================
 const extractUrlsFromData = ({
@@ -98,10 +97,10 @@ const extractUrlsFromData = ({
       const src = $(element).attr(attribute);
       return src && condition(src, mainPageUrl);
     })
-    .map(element => {
+    .map((element) => {
       const { attribute } = elementsConfig[element.tagName];
       return $(element).attr(attribute);
-    })
+    });
 
   return urls;
 };
@@ -114,15 +113,15 @@ const changeUrlValuesInData = ({
 }) => {
   const $ = cheerio.load(data);
   const sourcesOutputDirName = path.basename(sourcesOutputDirPath);
-  const selector = Object.keys(elementsConfig).join(', ')
+  const selector = Object.keys(elementsConfig).join(', ');
   $(selector).toArray()
-    .filter(element => {
-      const { attribute, condition } = elementsConfig[element.tagName]
-      const src = $(element).attr(attribute)
-      return src && condition(src, mainPageUrl)
+    .filter((element) => {
+      const { attribute, condition } = elementsConfig[element.tagName];
+      const src = $(element).attr(attribute);
+      return src && condition(src, mainPageUrl);
     })
     .forEach((element) => {
-      const { attribute } = elementsConfig[element.tagName]
+      const { attribute } = elementsConfig[element.tagName];
       const src = $(element).attr(attribute);
       const fullPath = path.join(sourcesOutputDirName,
         createNameByUrls({
@@ -131,7 +130,7 @@ const changeUrlValuesInData = ({
           usageCase: 'Filename',
         }));
       $(element).attr(attribute, fullPath);
-    })
+    });
 
   return $.html();
 };
@@ -154,8 +153,10 @@ const saveSourcesPromise = ({
     task: () => crawlAndSaveContent({
       fullOutputDirPath: sourcesOutputDirPath,
       sourceUrl, mainPageUrl,
-      crawlingOptions: { responseType: 'arraybuffer' },
-    })
+      crawlingOptions: {
+        responseType: 'arraybuffer',
+      },
+    }),
   }));
 
   const taskList = new Listr(tasks, { concurrent: true });
@@ -198,7 +199,7 @@ const elementsConfig = {
     attribute: 'src',
     condition: isLocalSource,
   },
-}
+};
 
 const processSources = ({
   outputDir,
@@ -228,8 +229,8 @@ const processSources = ({
         elementsConfig,
       });
       return Promise.all([sourcesSave, mainFileChange]);
-    })
-}
+    });
+};
 
 // =================== Main Page Save Function ===================
 const savePage = (mainPageUrl, outputDir = process.cwd()) => {
