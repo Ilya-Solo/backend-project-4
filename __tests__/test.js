@@ -18,7 +18,7 @@ test('file content filling test', async () => {
         .get('/courses')
         .reply(200, '<html><head></head><body>some text ABC</body></html>');
 
-    const filePath = await savePage(directoryPath, 'https://ru.hexlet.io/courses');
+    const filePath = await savePage('https://ru.hexlet.io/courses', directoryPath);
 
     expect(request.isDone()).toBe(true);
     expect(await fs.promises.readFile(filePath, 'utf-8')).toBe('<html><head></head><body>some text ABC</body></html>');
@@ -44,7 +44,7 @@ test('sources crawling test', async () => {
     nock('https://ru.hexlet.io')
         .get('/courses')
         .reply(200, mainPageDataBefore);
-    await savePage(directoryPath, 'https://ru.hexlet.io/courses');
+    await savePage('https://ru.hexlet.io/courses', directoryPath);
     process.stdout.write = originalStdout
     const filePath = path.join(directoryPath, 'ru-hexlet-io-courses.html');
     expect((await fs.promises.readFile(filePath, 'utf-8')).replace(/(\n| )/g, '')).toBe(mainPageDataAfter.replace(/(\n| )/g, ''));
@@ -66,15 +66,15 @@ describe('Error handling tests', () => {
         const invalidBaseUrl = 'https://ru.hexlet.io';
         const expectedError = `getaddrinfo ENOTFOUND ${invalidBaseUrl}`;
         nock(invalidBaseUrl).get('/').replyWithError(expectedError);
-        await expect(savePage(directoryPath, 'https://ru.hexlet.io/'))
+        await expect(savePage('https://ru.hexlet.io/', directoryPath))
             .rejects.toThrow(/ENOTFOUND/);
     });
     test('dir existance error handling', async () => {
-        const fakeDir = path.join(directoryPath, 'fakeDir/dirName');
+        const fakeDir = path.join('fakeDir/dirName', directoryPath);
         nock('https://ru.hexlet.io')
             .get('/courses')
             .reply(200, 'some data');
-        await expect(savePage(fakeDir, 'https://ru.hexlet.io/courses')).rejects.toThrow(/ENOENT/);
+        await expect(savePage('https://ru.hexlet.io/courses', fakeDir)).rejects.toThrow(/ENOENT/);
     });
 })
 

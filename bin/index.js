@@ -15,7 +15,7 @@ program
     .arguments('<url>')
     .option('-o --output [dir]', 'output dir', process.cwd())
     .action((url) => {
-        savePage(program.opts().output, url)
+        savePage(url, program.opts().output)
             .catch((error) => {
                 console.error(error.message);
                 process.exit(1);

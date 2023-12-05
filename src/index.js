@@ -155,7 +155,7 @@ const processSources = ({ outputDir, mainPageUrl, mainFilePath }) => {
 }
 
 // =================== Main Page Save Function ===================
-const savePage = (outputDir, mainPageUrl) => {
+const savePage = (mainPageUrl, outputDir) => {
     let mainFilePath;
     debug('Start main page crawling');
     return crawlAndSaveContent({ fullOutputDirPath: outputDir, sourceUrl: mainPageUrl })
