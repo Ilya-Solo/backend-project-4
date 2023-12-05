@@ -20,8 +20,8 @@ const configureUrlObj = (sourceUrl, mainPageUrl) => {
   const fileName = `${sourceUrlObj.hostname}${sourceUrlObj.pathname}`
     .replace(extension, '')
     .replace(/[^A-Za-z0-9]/g, '-');
-  return { name: fileName, extension: extension || '' }
-}
+  return { name: fileName, extension: extension || '' };
+};
 
 const createNameByUrls = ({ sourceUrl, mainPageUrl, usageCase }) => {
   const urlObj = configureUrlObj(sourceUrl, mainPageUrl);
@@ -34,23 +34,22 @@ const createNameByUrls = ({ sourceUrl, mainPageUrl, usageCase }) => {
     default:
       throw Error('No such a naming case');
   }
-}
+};
 
 // ========== Basic File System and Crawling Functions ===========
-const crawlContent = (url, crawlingOptions) => {
-  return axios.get(url, crawlingOptions)
-    .then((response) => response.data)
-    .then((data) => {
-      if (crawlingOptions.responseType === 'arraybuffer') {
-        return Buffer.from(data);
-      }
-      return data;
-    })
-}
+const crawlContent = (url, crawlingOptions) => axios.get(url, crawlingOptions)
+  .then((response) => response.data)
+  .then((data) => {
+    if (crawlingOptions.responseType === 'arraybuffer') {
+      return Buffer.from(data);
+    }
+    return data;
+  });
 
 const saveContent = ({ data, outputDirPath, sourceUrl, mainPageUrl }) => {
   const fileName = createNameByUrls({ sourceUrl, mainPageUrl, usageCase: 'Filename' });
   const fullFilePath = path.join(outputDirPath.toString(), fileName);
+
   return fs.promises.writeFile(fullFilePath, data, 'utf-8')
     .then(() => fullFilePath);
 }
@@ -165,13 +164,11 @@ const savePage = (mainPageUrl, outputDir = process.cwd()) => {
       debug('Start sources crawling');
       return filepath;
     })
-    .then((filepath) => {
-      return processSources({ outputDir, mainPageUrl, mainFilePath: filepath })
-    })
+    .then((filepath) => processSources({ outputDir, mainPageUrl, mainFilePath: filepath }))
     .then(() => {
       debug('Sources have been crawled');
       return mainFilePath;
     });
-}
+};
 
 export default savePage;

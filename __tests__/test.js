@@ -1,4 +1,3 @@
-
 import path from 'path';
 import nock from 'nock';
 import fs from 'fs';
@@ -45,7 +44,7 @@ test('sources crawling test', async () => {
     .get('/courses')
     .reply(200, mainPageDataBefore);
   await savePage('https://ru.hexlet.io/courses', directoryPath);
-  process.stdout.write = originalStdout
+  process.stdout.write = originalStdout;
   const filePath = path.join(directoryPath, 'ru-hexlet-io-courses.html');
   expect((await fs.promises.readFile(filePath, 'utf-8')).replace(/(\n| )/g, '')).toBe(mainPageDataAfter.replace(/(\n| )/g, ''));
 
@@ -62,7 +61,7 @@ test('sources crawling test', async () => {
 });
 
 describe('Error handling tests', () => {
-  test('no response ', async () => {
+  test('no response', async () => {
     const invalidBaseUrl = 'https://ru.hexlet.io';
     const expectedError = `getaddrinfo ENOTFOUND ${invalidBaseUrl}`;
     nock(invalidBaseUrl).get('/').replyWithError(expectedError);
@@ -77,7 +76,6 @@ describe('Error handling tests', () => {
     await expect(savePage('https://ru.hexlet.io/courses', fakeDir)).rejects.toThrow(/ENOENT/);
   });
 });
-
 
 afterEach(async () => {
   await fs.promises.rm(directoryPath, { recursive: true });
