@@ -82,7 +82,6 @@ const crawlAndSaveContent = ({
     mainPageUrl,
   }));
 
-
 // ================ Sources Processing Functions =================
 const extractUrlsFromData = ({
   data,
@@ -152,7 +151,8 @@ const saveSourcesPromise = ({
     title: sourceUrl,
     task: () => crawlAndSaveContent({
       fullOutputDirPath: sourcesOutputDirPath,
-      sourceUrl, mainPageUrl,
+      sourceUrl,
+      mainPageUrl,
       crawlingOptions: {
         responseType: 'arraybuffer',
       },
